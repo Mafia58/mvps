@@ -1,5 +1,5 @@
 import aiohttp
-from config import SESSION_NAME
+from configs import Config
 from requests.utils import requote_uri
 
 API_1337x = "https://api.abirhasan.wtf/1337x?query={}&limit={}"
