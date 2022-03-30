@@ -56,7 +56,7 @@ Type /{BotCommands.HelpCommand} to get a list of available commands
         sendMarkup(start_string, context.bot, update, reply_markup)
     else:
         sendMarkup(
-            'ඇයි ප#ද බලන්නෙ ගේමද ඉල්ලනෙ කැ#යා අව්වෙ දණගස්සන්නෙ\nමේ වගේ බොටෙක් ඕනෙ නම් මට මැසේජ් එකක් දාන්න <b>@akalankanime</b>.',
+            'ඇයි ප#ද බලන්නෙ ගේමද ඉල්ලනෙ කැ#යා අව්වෙ දණගස්සන්නෙ\nමේ වගේ බොටෙක් ඕනෙ නම් මට මැසේජ් එකක් දාන්න <b>@akalankanime2</b>.',
             context.bot,
             update,
             reply_markup,
