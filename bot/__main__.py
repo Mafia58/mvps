@@ -50,13 +50,13 @@ def start(update, context):
     reply_markup = InlineKeyboardMarkup(buttons.build_menu(2))
     if CustomFilters.authorized_user(update) or CustomFilters.authorized_chat(update):
         start_string = f'''
-This bot can mirror all your links to Google Drive!
+This bot can mirror all your links to Google Drive! and Leech your links to Telegram
 Type /{BotCommands.HelpCommand} to get a list of available commands
 '''
         sendMarkup(start_string, context.bot, update, reply_markup)
     else:
         sendMarkup(
-            'ඇයි ප#ද බලන්නෙ ගේමද ඉල්ලනෙ කැ#යා අව්වෙ දණගස්සන්නෙ\nමේ වගේ බොටෙක් ඕනෙ නම් මට මැසේජ් එකක් දාන්න <b>@akalankanime2</b>.',
+            'halo mage rattarn yaluwane!',
             context.bot,
             update,
             reply_markup,
@@ -229,11 +229,11 @@ def main():
     if os.path.isfile(".restartmsg"):
         with open(".restartmsg") as f:
             chat_id, msg_id = map(int, f)
-        bot.edit_message_text("Restarted successfully!/nපුතේ මම ආයෙ නැගිට්ටා බන්", chat_id, msg_id)
+        bot.edit_message_text("Restarted successfully!\nපුතේ මම ආයෙ නැගිට්ටා බන්", chat_id, msg_id)
         os.remove(".restartmsg")
     elif OWNER_ID:
         try:
-            text = "<b>Bot Restarted!/nපුතේ මම ආයෙ නැගිට්ටා බන්</b>"
+            text = "<b>Bot Restarted!\nපුතේ මම ආයෙ නැගිට්ටා බන්</b>"
             bot.sendMessage(chat_id=OWNER_ID, text=text, parse_mode=ParseMode.HTML)
             if AUTHORIZED_CHATS:
                 for i in AUTHORIZED_CHATS:
