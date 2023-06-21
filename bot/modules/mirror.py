@@ -42,6 +42,27 @@ from bot.helper.telegram_helper import button_build
 ariaDlManager = AriaDownloadHelper()
 ariaDlManager.start_listener()
 
+download_limit = {}
+
+def set_download_limit(user_id, limit, duration):
+    if limit == "unlimited":
+        expiration_timestamp = time.time() + duration
+        download_limit[user_id] = (float('inf'), expiration_timestamp)
+    else:
+        download_limit[user_id] = (int(limit), 0)
+
+def increment_download_count(user_id):
+    if user_id not in download_limit:
+        download_limit[user_id] = (1, 0)
+    else:
+        limit, expiration_timestamp = download_limit[user_id]
+        if expiration_timestamp > 0 and time.time() > expiration_timestamp:
+            download_limit[user_id] = (1, 0)
+        else:
+            download_limit[user_id] = (limit + 1, expiration_timestamp)
+
+def get_download_count(user_id):
+    return download_limit.get(user_id, (0, 0))[0]
 
 class MirrorListener(listeners.MirrorListeners):
     def __init__(self, bot, update, pswd, isTar=False, extract=False, isZip=False, isQbit=False, isLeech=False):
@@ -54,7 +75,19 @@ class MirrorListener(listeners.MirrorListeners):
         self.pswd = pswd
 
     def onDownloadStarted(self):
-        pass
+        user_id = self.message.from_user.id
+        download_count = get_download_count(user_id)
+        limit, expiration_timestamp = download_limit.get(user_id, (0, 0))
+        if limit != float('inf') and download_count >= limit:
+            error_msg = "You have reached the maximum download limit."
+            self.onDownloadError(error_msg)
+            return
+        if expiration_timestamp > 0 and time.time() > expiration_timestamp:
+            error_msg = "Your unlimited download permission has expired."
+            self.onDownloadError(error_msg)
+            return
+        increment_download_count(user_id)
+        
 
     def onDownloadProgress(self):
         # We are handling this on our own!
@@ -177,6 +210,9 @@ class MirrorListener(listeners.MirrorListeners):
             update_all_messages()
             drive.upload(up_name)
 
+        user_id = self.message.from_user.id
+        download_limit.pop(user_id, None)
+
     def onDownloadError(self, error):
         error = error.replace('<', ' ')
         error = error.replace('>', ' ')
@@ -199,6 +235,8 @@ class MirrorListener(listeners.MirrorListeners):
         else:
             update_all_messages()
 
+        user_id = self.message.from_user.id
+        download_limit.pop(user_id, None)
     def onUploadStarted(self):
         pass
 
@@ -462,6 +500,26 @@ def _mirror(bot, update, isTar=False, extract=False, isZip=False, isQbit=False, 
         ariaDlManager.add_download(link, f'{DOWNLOAD_DIR}{listener.uid}/', listener, name)
         sendStatusMessage(update, bot)
 
+def handle_subscription_command(update, context):
+    # Extract the user ID, limit, and duration from the command arguments
+    args = context.args
+    if len(args) != 3:
+        update.message.reply_text("Invalid command usage. Please provide the user ID, the limit, and the duration in days.")
+        return
+    user_id = int(args[0])
+    limit = args[1]
+    duration = int(args[2]) * 24 * 60 * 60  # Convert duration to seconds
+
+    # Check if the user is an admin
+    user = update.message.from_user
+    if not user.is_superuser:
+        update.message.reply_text("You are not authorized to perform this action.")
+        return
+
+    # Set the download limit and duration for the user
+    set_download_limit(user_id, limit, duration)
+    expiration_date = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time() + duration))
+    update.message.reply_text(f"The download limit for user {user_id} has been set to {limit} until {expiration_date}.")
 
 def mirror(update, context):
     _mirror(context.bot, update)
@@ -511,6 +569,8 @@ def qb_unzip_leech(update, context):
 def qb_zip_leech(update, context):
     _mirror(context.bot, update, True, isZip=True, isQbit=True, isLeech=True)
 
+sub_handler = CommandHandler(BotCommands.SubCommand, handle_subscription_command,
+                                filters=CustomFilters.authorized_user, run_async=True)
 mirror_handler = CommandHandler(BotCommands.MirrorCommand, mirror,
                                 filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)
 tar_mirror_handler = CommandHandler(BotCommands.TarMirrorCommand, tar_mirror,
@@ -559,3 +619,4 @@ dispatcher.add_handler(qb_leech_handler)
 dispatcher.add_handler(qb_tar_leech_handler)
 dispatcher.add_handler(qb_unzip_leech_handler)
 dispatcher.add_handler(qb_zip_leech_handler)
+dispatcher.add_handler(sub_handler)
